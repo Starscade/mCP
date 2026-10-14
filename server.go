@@ -82,6 +82,7 @@ func (s *Server) Serve(stdin io.Reader, stdout io.Writer) {
 				})
 			}
 			s.respond(stdout, req.ID, map[string]interface{}{
+				"resultType": "complete",
 				"tools": list,
 			}, nil)
 
