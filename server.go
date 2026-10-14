@@ -110,11 +110,54 @@ func (s *Server) handleToolCall(ctx context.Context, params json.RawMessage) (an
 
 	for _, tool := range s.Tools {
 		if tool.Name == call.Name {
-			return tool.Handler(call.Arguments)
+			if tool.InputSchema != nil {
+				if err := validateSchema(tool.InputSchema, call.Arguments); err != nil {
+					return nil, &RPCError{Code: -32602, Message: fmt.Sprintf("Schema validation failed: %v", err)}
+				}
+			}
+			return tool.Handler(ctx, call.Arguments)
 		}
 	}
 
 	return nil, &RPCError{Code: -32601, Message: "Tool not found"}
+}
+
+func validateSchema(schema *ToolSchema, args map[string]interface{}) error {
+	var props map[string]map[string]string
+	if err := json.Unmarshal(schema.Properties, &props); err != nil {
+		return fmt.Errorf("invalid schema properties")
+	}
+
+	for _, req := range schema.Required {
+		if _, ok := args[req]; !ok {
+			return fmt.Errorf("missing required parameter: %s", req)
+		}
+	}
+
+	for k, v := range args {
+		prop, ok := props[k]
+		if !ok {
+			continue // Allow extra arguments
+		}
+
+		expectedType := prop["type"]
+		switch expectedType {
+		case "string":
+			if _, ok := v.(string); !ok {
+				return fmt.Errorf("parameter %s must be a string", k)
+			}
+		case "number":
+			if _, ok := v.(float64); !ok {
+				return fmt.Errorf("parameter %s must be a number", k)
+			}
+		case "boolean":
+			if _, ok := v.(bool); !ok {
+				return fmt.Errorf("parameter %s must be a boolean", k)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *Server) respond(w io.Writer, id any, result any, rpcErr *RPCError) {
