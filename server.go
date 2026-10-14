@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -85,7 +86,7 @@ func (s *Server) Serve(stdin io.Reader, stdout io.Writer) {
 			}, nil)
 
 		case "tools/call":
-			result, rpcErr := s.handleToolCall(req.Params)
+			result, rpcErr := s.handleToolCall(context.Background(), req.Params)
 			s.respond(stdout, req.ID, result, rpcErr)
 
 		default:
@@ -101,7 +102,7 @@ func (s *Server) Serve(stdin io.Reader, stdout io.Writer) {
 	}
 }
 
-func (s *Server) handleToolCall(params json.RawMessage) (any, *RPCError) {
+func (s *Server) handleToolCall(ctx context.Context, params json.RawMessage) (any, *RPCError) {
 	var call ToolCallParams
 	if err := json.Unmarshal(params, &call); err != nil {
 		return nil, &RPCError{Code: -32602, Message: "Invalid params"}
@@ -185,12 +186,12 @@ type ToolResult struct {
 }
 
 type Tool struct {
-	Name         string                                                `json:"name"`
-	Title        string                                                `json:"title,omitempty"`
-	Description  string                                                `json:"description"`
-	InputSchema  *ToolSchema                                           `json:"inputSchema"`
-	OutputSchema *ToolSchema                                           `json:"outputSchema,omitempty"`
-	Handler      func(map[string]interface{}) (*ToolResult, *RPCError) `json:"-"`
+	Name         string                                                                `json:"name"`
+	Title        string                                                                `json:"title,omitempty"`
+	Description  string                                                                `json:"description"`
+	InputSchema  *ToolSchema                                                           `json:"inputSchema"`
+	OutputSchema *ToolSchema                                                           `json:"outputSchema,omitempty"`
+	Handler      func(context.Context, map[string]interface{}) (*ToolResult, *RPCError) `json:"-"`
 }
 
 type ToolSchema struct {
@@ -285,7 +286,7 @@ func WithOutputSchema(params ...Param) ToolOption {
 	}
 }
 
-func NewTool(name string, handler func(map[string]interface{}) (*ToolResult, *RPCError), opts ...ToolOption) Tool {
+func NewTool(name string, handler func(context.Context, map[string]interface{}) (*ToolResult, *RPCError), opts ...ToolOption) Tool {
 	t := Tool{
 		Name:    name,
 		Handler: handler,
