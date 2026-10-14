@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"bytes"
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -50,7 +51,7 @@ func TestServer_ToolCall(t *testing.T) {
 	srv := NewServer("TestServer", "1.0.0", "Desc")
 
 	// Add a dummy tool to test the calling mechanism
-	srv.AddTool(NewTool("ping", func(args map[string]interface{}) (*ToolResult, *RPCError) {
+	srv.AddTool(NewTool("ping", func(ctx context.Context, args map[string]interface{}) (*ToolResult, *RPCError) {
 		return &ToolResult{
 			MCPResult: MCPResult{ResultType: "complete"},
 			Content:   []ToolContent{{Type: "text", Text: "pong"}},

@@ -229,11 +229,11 @@ type ToolResult struct {
 }
 
 type Tool struct {
-	Name         string                                                                `json:"name"`
-	Title        string                                                                `json:"title,omitempty"`
-	Description  string                                                                `json:"description"`
-	InputSchema  *ToolSchema                                                           `json:"inputSchema"`
-	OutputSchema *ToolSchema                                                           `json:"outputSchema,omitempty"`
+	Name         string                                                                 `json:"name"`
+	Title        string                                                                 `json:"title,omitempty"`
+	Description  string                                                                 `json:"description"`
+	InputSchema  *ToolSchema                                                            `json:"inputSchema"`
+	OutputSchema *ToolSchema                                                            `json:"outputSchema,omitempty"`
 	Handler      func(context.Context, map[string]interface{}) (*ToolResult, *RPCError) `json:"-"`
 }
 
